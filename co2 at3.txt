@@ -1,0 +1,54 @@
+#include <stdio.h>
+
+// LED Driver Functions
+void LED_Init()
+{
+    printf("LED Driver Initialized\n");
+}
+
+void LED_On()
+{
+    printf("LED is ON\n");
+}
+
+// Buzzer Driver Functions
+void Buzzer_Init()
+{
+    printf("Buzzer Driver Initialized\n");
+}
+
+void Buzzer_On()
+{
+    printf("Buzzer is ON\n");
+}
+
+// Driver Interface
+typedef struct
+{
+    void (*Init)(void);
+    void (*Operate)(void);
+} Driver;
+
+int main()
+{
+    Driver ledDriver;
+    Driver buzzerDriver;
+
+    // Assign LED functions
+    ledDriver.Init = LED_Init;
+    ledDriver.Operate = LED_On;
+
+    // Assign Buzzer functions
+    buzzerDriver.Init = Buzzer_Init;
+    buzzerDriver.Operate = Buzzer_On;
+
+    // Use LED Driver
+    ledDriver.Init();
+    ledDriver.Operate();
+
+    // Use Buzzer Driver
+    buzzerDriver.Init();
+    buzzerDriver.Operate();
+
+    return 0;
+}
