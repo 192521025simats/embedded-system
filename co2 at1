@@ -1,0 +1,356 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+
+/* -------------------- SYSTEM CONSTANTS -------------------- */
+
+#define TEMP_LIMIT          80.0
+#define VIBRATION_LIMIT      7.0
+#define ENERGY_LIMIT        90.0
+#define SAFETY_LIMIT         1
+
+#define TOTAL_CYCLES        20
+
+/* -------------------- SENSOR STRUCTURE -------------------- */
+
+typedef struct
+{
+    float temperature;
+    float vibration;
+    float energy;
+    int human_presence;
+} SensorData;
+
+/* -------------------- SYSTEM STATUS -------------------- */
+
+typedef struct
+{
+    int machine_running;
+    int robot_running;
+    int safety_status;
+    int maintenance_required;
+
+    int production_count;
+    int warning_count;
+    int emergency_count;
+} SystemStatus;
+
+/* -------------------- PERFORMANCE STRUCTURE -------------------- */
+
+typedef struct
+{
+    float efficiency;
+    float energy_efficiency;
+    float safety_score;
+    float maintenance_score;
+} Performance;
+
+/* -------------------- FUNCTION POINTERS -------------------- */
+
+typedef void (*SensorFunction)(SensorData *);
+typedef void (*ActuatorFunction)(SystemStatus *, SensorData *);
+
+/* -------------------- SENSOR FUNCTIONS -------------------- */
+
+void readTemperature(SensorData *data)
+{
+    data->temperature = 50 + rand() % 45;
+}
+
+void readVibration(SensorData *data)
+{
+    data->vibration = 2 + (rand() % 80) / 10.0;
+}
+
+void readEnergy(SensorData *data)
+{
+    data->energy = 40 + rand() % 65;
+}
+
+void detectHuman(SensorData *data)
+{
+    data->human_presence = rand() % 2;
+}
+
+/* -------------------- SENSOR DRIVER -------------------- */
+
+void readSensors(SensorData *data)
+{
+    SensorFunction sensors[] =
+    {
+        readTemperature,
+        readVibration,
+        readEnergy,
+        detectHuman
+    };
+
+    for (int i = 0; i < 4; i++)
+    {
+        sensors[i](data);
+    }
+}
+
+/* -------------------- SAFETY MONITOR -------------------- */
+
+void safetyMonitor(SensorData *data, SystemStatus *status)
+{
+    status->safety_status = 1;
+
+    if (data->human_presence == 1)
+    {
+        printf("WARNING: Human detected near robot.\n");
+        status->robot_running = 0;
+        status->safety_status = 0;
+        status->warning_count++;
+    }
+
+    if (data->temperature > TEMP_LIMIT)
+    {
+        printf("WARNING: High temperature detected.\n");
+        status->safety_status = 0;
+        status->warning_count++;
+    }
+
+    if (data->vibration > VIBRATION_LIMIT)
+    {
+        printf("WARNING: Excessive vibration detected.\n");
+        status->safety_status = 0;
+        status->maintenance_required = 1;
+        status->warning_count++;
+    }
+
+    if (data->energy > ENERGY_LIMIT)
+    {
+        printf("WARNING: High energy consumption.\n");
+        status->warning_count++;
+    }
+}
+
+/* -------------------- PREDICTIVE MAINTENANCE -------------------- */
+
+void predictiveMaintenance(SensorData *data, SystemStatus *status)
+{
+    if (data->temperature > TEMP_LIMIT ||
+        data->vibration > VIBRATION_LIMIT)
+    {
+        status->maintenance_required = 1;
+
+        printf("Predictive Maintenance: SERVICE REQUIRED\n");
+    }
+    else
+    {
+        status->maintenance_required = 0;
+
+        printf("Predictive Maintenance: Machine Healthy\n");
+    }
+}
+
+/* -------------------- ROBOT CONTROL -------------------- */
+
+void controlRobot(SystemStatus *status, SensorData *data)
+{
+    if (status->safety_status == 1 &&
+        status->maintenance_required == 0)
+    {
+        status->robot_running = 1;
+        printf("Robot Status: RUNNING\n");
+    }
+    else
+    {
+        status->robot_running = 0;
+        printf("Robot Status: STOPPED\n");
+    }
+}
+
+/* -------------------- MACHINE CONTROL -------------------- */
+
+void controlMachine(SystemStatus *status, SensorData *data)
+{
+    if (status->safety_status == 1)
+    {
+        status->machine_running = 1;
+    }
+    else
+    {
+        status->machine_running = 0;
+        status->emergency_count++;
+
+        printf("EMERGENCY: Machine stopped for safety!\n");
+    }
+}
+
+/* -------------------- PRODUCTION PROCESS -------------------- */
+
+void productionProcess(SystemStatus *status)
+{
+    if (status->machine_running == 1 &&
+        status->robot_running == 1)
+    {
+        status->production_count++;
+
+        printf("Production: Product %d completed\n",
+               status->production_count);
+    }
+    else
+    {
+        printf("Production: System idle\n");
+    }
+}
+
+/* -------------------- PERFORMANCE EVALUATION -------------------- */
+
+void evaluatePerformance(SystemStatus *status,
+                         Performance *performance)
+{
+    performance->efficiency =
+        ((float)status->production_count / TOTAL_CYCLES) * 100;
+
+    performance->energy_efficiency =
+        100 - ((float)status->warning_count /
+               TOTAL_CYCLES) * 10;
+
+    if (performance->energy_efficiency < 0)
+        performance->energy_efficiency = 0;
+
+    performance->safety_score =
+        100 - ((float)status->emergency_count /
+               TOTAL_CYCLES) * 100;
+
+    performance->maintenance_score =
+        100 - ((float)status->warning_count /
+               TOTAL_CYCLES) * 50;
+
+    if (performance->maintenance_score < 0)
+        performance->maintenance_score = 0;
+}
+
+/* -------------------- DISPLAY DASHBOARD -------------------- */
+
+void displayDashboard(SensorData *data,
+                      SystemStatus *status)
+{
+    printf("\n========================================\n");
+    printf("      INDUSTRY 5.0 SMART FACTORY\n");
+    printf("========================================\n");
+
+    printf("Temperature       : %.2f C\n",
+           data->temperature);
+
+    printf("Vibration         : %.2f mm/s\n",
+           data->vibration);
+
+    printf("Energy Consumption: %.2f %%\n",
+           data->energy);
+
+    printf("Human Presence    : %s\n",
+           data->human_presence ? "YES" : "NO");
+
+    printf("Machine           : %s\n",
+           status->machine_running ? "RUNNING" : "STOPPED");
+
+    printf("Collaborative Robot: %s\n",
+           status->robot_running ? "RUNNING" : "STOPPED");
+
+    printf("========================================\n");
+}
+
+/* -------------------- FINAL REPORT -------------------- */
+
+void displayPerformance(Performance *performance,
+                        SystemStatus *status)
+{
+    printf("\n\n");
+    printf("========================================\n");
+    printf("       PERFORMANCE EVALUATION\n");
+    printf("========================================\n");
+
+    printf("Production Count      : %d\n",
+           status->production_count);
+
+    printf("Warning Count         : %d\n",
+           status->warning_count);
+
+    printf("Emergency Stops       : %d\n",
+           status->emergency_count);
+
+    printf("Production Efficiency : %.2f %%\n",
+           performance->efficiency);
+
+    printf("Energy Efficiency     : %.2f %%\n",
+           performance->energy_efficiency);
+
+    printf("Safety Score          : %.2f %%\n",
+           performance->safety_score);
+
+    printf("Maintenance Score     : %.2f %%\n",
+           performance->maintenance_score);
+
+    printf("========================================\n");
+
+    if (performance->efficiency >= 80 &&
+        performance->safety_score >= 80)
+    {
+        printf("Overall Result: EXCELLENT\n");
+    }
+    else if (performance->efficiency >= 60)
+    {
+        printf("Overall Result: GOOD\n");
+    }
+    else
+    {
+        printf("Overall Result: NEEDS IMPROVEMENT\n");
+    }
+
+    printf("========================================\n");
+}
+
+/* -------------------- MAIN FUNCTION -------------------- */
+
+int main()
+{
+    SensorData sensor;
+    SystemStatus status = {0};
+    Performance performance;
+
+    srand((unsigned int)time(NULL));
+
+    printf("\n");
+    printf("============================================\n");
+    printf("   INDUSTRY 5.0 SMART MANUFACTURING SYSTEM\n");
+    printf("============================================\n");
+
+    printf("\nSimulation Started...\n");
+
+    for (int cycle = 1; cycle <= TOTAL_CYCLES; cycle++)
+    {
+        printf("\n\n************ CYCLE %d ************\n",
+               cycle);
+
+        /* Read sensors */
+        readSensors(&sensor);
+
+        /* Safety monitoring */
+        safetyMonitor(&sensor, &status);
+
+        /* Predictive maintenance */
+        predictiveMaintenance(&sensor, &status);
+
+        /* Actuator control */
+        controlMachine(&status, &sensor);
+        controlRobot(&status, &sensor);
+
+        /* Production */
+        productionProcess(&status);
+
+        /* Dashboard */
+        displayDashboard(&sensor, &status);
+    }
+
+    /* Performance calculation */
+    evaluatePerformance(&status, &performance);
+
+    /* Final report */
+    displayPerformance(&performance, &status);
+
+    return 0;
+}
